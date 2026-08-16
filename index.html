@@ -1,0 +1,1794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Site Report</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#0E1D1C; --paper:#EAEDEC; --paper2:#F5F6F4; --ink:#16302E; --ink-soft:#5A625F;
+    --accent:#A50021; --red:#A50021; --green:#3E6B3E; --steel:#4A4A4C;
+    --line:rgba(0,0,0,0.14); --line-soft:rgba(0,0,0,0.08); --radius:8px;
+    --font-display:'Oswald',sans-serif; --font-body:'Inter',sans-serif; --font-mono:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);font-family:var(--font-body);color:var(--ink);}
+  .shell{max-width:980px;margin:0 auto;min-height:100vh;background:var(--paper);}
+  .topbar{background:var(--ink);color:var(--paper2);padding:14px 20px;position:sticky;top:0;z-index:30;border-bottom:3px solid var(--accent);display:flex;flex-direction:column;gap:10px;}
+  .topbar-row2{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+  .brand{font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:0.4px;text-transform:uppercase;}
+  .brand span{color:var(--accent);}
+  .admin-btn{background:transparent;border:1.5px solid var(--accent);color:var(--accent);padding:8px 16px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;border-radius:6px;cursor:pointer;flex-shrink:0;white-space:nowrap;}
+  .admin-btn:hover{background:var(--accent);color:#FFF6F2;}
+  .tabs{display:flex;gap:4px;}
+  .tabbtn{background:none;border:1px solid rgba(255,255,255,0.15);color:#B9B6A9;padding:8px 14px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;border-radius:6px;cursor:pointer;}
+  .tabbtn.active{background:var(--accent);color:#FFF6F2;border-color:var(--accent);}
+  main{padding:20px;}
+  .section-title{font-family:var(--font-display);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--ink-soft);margin:22px 0 10px;}
+  .section-title:first-child{margin-top:0;}
+  .card{background:var(--paper2);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px;}
+  label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink-soft);margin-bottom:4px;}
+  select,input[type=text],input[type=number],input[type=date],textarea{width:100%;font-family:var(--font-body);font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);margin-bottom:10px;}
+  textarea{resize:vertical;min-height:60px;}
+  select:focus,input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 14px;}
+  @media(max-width:640px){.grid2,.grid3{grid-template-columns:1fr;}}
+  .btn{font-family:var(--font-body);font-size:13px;font-weight:600;padding:9px 14px;border-radius:6px;border:1px solid var(--ink);background:#fff;color:var(--ink);cursor:pointer;}
+  .btn.primary{background:var(--ink);color:var(--accent);}
+  .btn.small{padding:5px 10px;font-size:12px;}
+  .btn.danger{border-color:var(--red);color:var(--red);}
+  .btn:active{transform:translateY(1px);}
+  details.acc{background:var(--paper2);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:12px;overflow:hidden;}
+  details.acc summary{padding:12px 16px;font-family:var(--font-display);font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:0.6px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;background:#EBE6D8;}
+  details.acc summary::-webkit-details-marker{display:none;}
+  details.acc summary .cnt{font-family:var(--font-mono);font-size:11px;color:var(--ink-soft);font-weight:400;text-transform:none;}
+  .acc-body{padding:14px 16px;}
+  table.dyn{width:100%;border-collapse:collapse;margin-bottom:10px;}
+  table.dyn th{font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--ink-soft);text-align:left;padding:4px 6px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  table.dyn td{padding:3px 4px;border-bottom:1px solid var(--line-soft);}
+  table.dyn input,table.dyn select{margin:0;padding:6px 7px;font-size:12px;min-width:80px;}
+  .dyn-wrap{overflow-x:auto;}
+  .rmrow{background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;padding:0 6px;}
+  .projcard{background:var(--paper2);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
+  .projcard.active{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset;}
+  .projcard .pn{font-family:var(--font-display);font-weight:600;font-size:15px;}
+  .projcard .ps{font-size:12px;color:var(--ink-soft);}
+  .photostrip{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+  .thumb{width:64px;height:64px;border-radius:6px;object-fit:cover;border:1px solid var(--line);}
+  .addphoto{width:64px;height:64px;border-radius:6px;border:1px dashed var(--line);background:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--ink-soft);cursor:pointer;}
+  .reportcard{background:var(--paper2);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;}
+  .reportcard .rh{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+  .reportcard .rn{font-family:var(--font-display);font-weight:600;font-size:15px;}
+  .reportcard .rs{font-size:12px;color:var(--ink-soft);}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--accent);font-size:13px;font-weight:600;padding:11px 18px;border-radius:8px;z-index:100;opacity:0;pointer-events:none;transition:opacity .25s;max-width:90%;text-align:center;}
+  .toast.show{opacity:1;}
+  .empty{text-align:center;padding:40px 20px;color:var(--ink-soft);font-size:13px;}
+  label.required::after{content:" *";color:var(--red);}
+  .weatherrow{display:flex;gap:8px;align-items:flex-end;}
+  .weatherrow .btn{margin-bottom:10px;white-space:nowrap;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="topbar">
+    <div class="brand"><img id="logoImg" alt="Martushev logo" style="height:26px;vertical-align:middle;margin-right:10px;"> DAILY<span>SITE REPORT</span></div>
+    <div class="topbar-row2">
+      <div class="tabs" id="tabsBar"></div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span id="identityBadge" style="font-size:11px;font-family:var(--font-mono);color:#B9B6A9;"></span>
+        <button class="admin-btn" id="adminToggle"></button>
+      </div>
+    </div>
+  </div>
+  <main id="view"></main>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+const LOGO_DATA_URI="data:image/png;base64,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";
+const INCIDENT_TYPES=["Near misses","First aid","Medical aid","Property damage","LTI","Environmental damage","Spills","MVA"];
+const WEATHER_OPTIONS=["Sunny","Overcast","Raining","Snowing","Windy","Fog"];
+const CONTACT_KEYS=["contact","address","cityProv","phone","email"];
+const CONTACT_LABELS={contact:"Contact name",address:"Address",cityProv:"City / province",phone:"Phone",email:"Email"};
+const CONTACT_BLOCKS=[
+  {key:"engineeringCompany",label:"Engineering company information"},
+  {key:"projectManager",label:"Project manager information"},
+  {key:"clientRep",label:"Client representative information"},
+  {key:"engineeringRep",label:"Engineering representative information"},
+  {key:"siteContact",label:"Site contact information"}
+];
+
+const SECTIONS={
+  delayLog:{label:"Delay log",columns:[
+    {key:"workFront",label:"Work front / operations / equipment",type:"text"},
+    {key:"todayHrs",label:"Today (hrs/day)",type:"number"},
+    {key:"toDateHrs",label:"To date (hrs)",type:"number"}
+  ]},
+  production:{label:"Daily production information",columns:[
+    {key:"costCode",label:"Cost code",type:"costcode-select",fillName:"costCodeName"},
+    {key:"costCodeName",label:"Cost code name",type:"text"},
+    {key:"contractQty",label:"Contract qty",type:"number"},
+    {key:"forecastQty",label:"Forecast qty",type:"number"},
+    {key:"comments",label:"Production comments",type:"text"},
+    {key:"dailyProduction",label:"Daily production",type:"select",options:["Yes","No"]},
+    {key:"totalProduction",label:"Total production",type:"number"},
+    {key:"unit",label:"Unit",type:"text"},
+    {key:"subcontractor",label:"Subcontractor",type:"text"},
+    {key:"truckingQty",label:"Trucking # on site",type:"number"},
+    {key:"truckingAvgHrs",label:"Trucking avg hrs",type:"number"},
+    {key:"avgCycle",label:"Avg cycle (min)",type:"number"}
+  ]},
+  materialReceived:{label:"Material received",columns:[
+    {key:"costCode",label:"Cost code",type:"costcode-select",fillName:"costCodeName"},
+    {key:"costCodeName",label:"Cost code name",type:"text"},
+    {key:"billable",label:"Billable",type:"select",options:["Yes","No"]},
+    {key:"description",label:"Material description & comments",type:"text"},
+    {key:"deliveredQty",label:"Delivered qty",type:"number"},
+    {key:"unit",label:"Unit",type:"text"},
+    {key:"remainingQty",label:"Remaining qty",type:"number"},
+    {key:"deliveredBy",label:"Delivered by",type:"text"},
+    {key:"bolRef",label:"BOL reference",type:"text"},
+    {key:"poRef",label:"PO reference",type:"text"}
+  ]},
+  indirectLabour:{label:"Indirect (office) labour",columns:[
+    {key:"costCode",label:"Cost code",type:"costcode-select"},
+    {key:"ticket",label:"Ticket #",type:"text"},
+    {key:"position",label:"Employee position",type:"text"},
+    {key:"name",label:"Employee name",type:"employee-select",fillPosition:"position"},
+    {key:"comments",label:"Comments",type:"text"},
+    {key:"totalHours",label:"Total hours",type:"number"},
+    {key:"travel",label:"Travel",type:"number"},
+    {key:"truck",label:"Pickup truck",type:"select",options:["No","Personal Truck","Company Truck"]},
+    {key:"truckId",label:"Truck ID",type:"text"},
+    {key:"loa",label:"LOA",type:"select",options:["Yes","No"]},
+    {key:"rtHours",label:"RT (auto)",type:"computed"},
+    {key:"otHours",label:"OT (auto)",type:"computed"},
+    {key:"dtHours",label:"DT (auto)",type:"computed"}
+  ]},
+  directLabour:{label:"Direct (field) labour & equipment",columns:[
+    {key:"costCode",label:"Cost code",type:"costcode-select"},
+    {key:"ticket",label:"Ticket #",type:"text"},
+    {key:"position",label:"Employee position",type:"text"},
+    {key:"name",label:"Employee name",type:"employee-select",fillPosition:"position"},
+    {key:"comments",label:"Comments",type:"text"},
+    {key:"totalHours",label:"Total hours",type:"number"},
+    {key:"travel",label:"Travel",type:"number"},
+    {key:"truck",label:"Pickup truck",type:"select",options:["No","Personal Truck","Company Truck"]},
+    {key:"truckId",label:"Truck ID",type:"text"},
+    {key:"loa",label:"LOA",type:"select",options:["Yes","No"]},
+    {key:"equipUnitId",label:"Equipment unit ID",type:"text"},
+    {key:"equipName",label:"Equipment name",type:"equipment-select",fillCode:"equipUnitId"},
+    {key:"equipHours",label:"Equipment hours",type:"number"},
+    {key:"productiveHrs",label:"Productive hours",type:"number"},
+    {key:"nonProductiveHrs",label:"Non-productive hours",type:"number"},
+    {key:"repairHrs",label:"Repair",type:"number"},
+    {key:"rtHours",label:"RT (auto)",type:"computed"},
+    {key:"otHours",label:"OT (auto)",type:"computed"},
+    {key:"dtHours",label:"DT (auto)",type:"computed"}
+  ]},
+  equipmentReceived:{label:"Equipment & tools received",columns:[
+    {key:"costCode",label:"Cost code",type:"costcode-select"},
+    {key:"equipCode",label:"Equipment code",type:"text"},
+    {key:"equipName",label:"Equipment name",type:"equipment-select",fillCode:"equipCode"},
+    {key:"comments",label:"Comments",type:"text"},
+    {key:"issues",label:"Issues",type:"select",options:["Yes","No"]},
+    {key:"inspected",label:"Inspected",type:"select",options:["Yes","No"]},
+    {key:"equipOwner",label:"Equipment owner",type:"text"},
+    {key:"deliveredBy",label:"Delivered by",type:"text"},
+    {key:"bolRef",label:"BOL reference",type:"text"},
+    {key:"poRef",label:"PO reference",type:"text"}
+  ]},
+  subcontractors:{label:"Subcontractors on site",columns:[
+    {key:"costCode",label:"Cost code",type:"costcode-select"},
+    {key:"contractorName",label:"Contractor name",type:"text"},
+    {key:"comments",label:"Comments",type:"text"},
+    {key:"qtyWorkers",label:"# workers",type:"number"},
+    {key:"rt",label:"RT",type:"number"},
+    {key:"ot",label:"OT",type:"number"},
+    {key:"dt",label:"DT",type:"number"},
+    {key:"subRef",label:"Subcontract reference",type:"text"},
+    {key:"poRef",label:"PO reference",type:"text"}
+  ]}
+};
+
+function uid(){return Math.random().toString(36).slice(2,9);}
+
+function freshContact(){const o={};CONTACT_KEYS.forEach(k=>o[k]="");return o;}
+
+function freshProject(){
+  const p={id:uid(),clientName:"",clientProjectNum:"",clientProjectName:"",companyProjectNum:"",companyProjectName:"",province:"AB",otDailyThreshold:8,dtDailyThreshold:12,costCodes:[],equipmentRates:{},labourRates:{}};
+  CONTACT_BLOCKS.forEach(b=>p[b.key]=freshContact());
+  return p;
+}
+
+function distinctEquipmentTypes(){return [...new Set(state.equipment.map(e=>e.type).filter(Boolean))].sort();}
+function distinctLabourTypes(){return [...new Set(state.employees.map(e=>e.labourType).filter(Boolean))].sort();}
+
+function computeLabourSplit(rows,otT,dtT){
+  const cum={};
+  rows.forEach(row=>{
+    const key=(row.name||'').trim().toLowerCase()||('_row_'+Math.random());
+    const start=cum[key]||0;
+    const total=Number(row.totalHours)||0;
+    const end=start+total;
+    const rt=Math.max(0,Math.min(end,otT)-start);
+    const ot=Math.max(0,Math.min(end,dtT)-Math.max(start,otT));
+    const dt=Math.max(0,end-Math.max(start,dtT));
+    row.rtHours=rt.toFixed(2);
+    row.otHours=ot.toFixed(2);
+    row.dtHours=dt.toFixed(2);
+    cum[key]=end;
+  });
+}
+
+function freshReport(projectId){
+  const r={id:uid(),projectId,date:new Date().toISOString().slice(0,10),shift:"Day",status:"draft",
+    incidentLog:INCIDENT_TYPES.map(t=>({type:t,comment:"",today:0,toDate:0})),
+    hseHighlights:"",
+    weatherAM:"",weatherAMTemp:"",weatherPM:"",weatherPMTemp:"",siteConditionNotes:"",notesForTeam:"",
+    workSummary:"",rfisNotices:"",
+    photos:[]};
+  Object.keys(SECTIONS).forEach(k=>r[k]=[]);
+  return r;
+}
+
+function newRow(sectionKey){
+  const o={};
+  SECTIONS[sectionKey].columns.forEach(c=>o[c.key]="");
+  return o;
+}
+
+// Tab visibility is now fully computed by visibleTabs() based on per-module permissions.
+
+let state={
+  tab:'myentry',
+  companyName:"Your Company Ltd",
+  adminMode:false,
+  adminPassword:"admin123",
+  projects:[],
+  reports:[],
+  employees:[],
+  equipment:[],
+  operatorEntries:[],
+  notifications:[],
+  operatorSession:null,
+  activeProjectId:null,
+  currentReport:null,
+  jobEditor:null,
+  employeeEditor:null,
+  equipmentEditor:null,
+  myEntryDraft:null,
+  toastTimer:null
+};
+
+function seed(){
+  const p=freshProject();
+  p.clientName="Lac La Biche County";
+  p.clientProjectNum="764043264-02";
+  p.clientProjectName="91 Avenue Connector (Beaver St Rd to 93 Street) Infrastructure Installation";
+  p.companyProjectNum="280026";
+  p.companyProjectName="Lac La Biche - 91 Avenue Connector Infrastructure Installation";
+  p.province="AB";
+  p.costCodes=[
+    {id:uid(),code:"150",name:"Mobilization / demobilization",active:true},
+    {id:uid(),code:"3150-t1",name:"Supply & install PVC C900 watermain, 300mm dia, 3m depth, shored vertical trench",active:true},
+    {id:uid(),code:"7735",name:"Hydrovac",active:true}
+  ];
+  p.equipmentRates={"Hydrovac":185,"Excavator":165};
+  p.labourRates={"Operator":68,"Labourer":48,"Foreman":72};
+  p.engineeringCompany={contact:"Camlin Consulting Engineers",address:"Suite 317, 1524-91 Street SW",cityProv:"Edmonton, AB",phone:"",email:""};
+  p.projectManager={contact:"Tim McFadyen",address:"Suite 205, 10426 Mayfield Rd.",cityProv:"Edmonton, AB",phone:"780-451-7076",email:"tmcfadyen@example.com"};
+  p.clientRep=freshContact();
+  p.engineeringRep=freshContact();
+  p.siteContact={contact:"Igor Roberts",address:"Suite 205, 10426 Mayfield Rd.",cityProv:"Edmonton, AB",phone:"780-222-9807",email:"iroberts@example.com"};
+  state.projects.push(p);
+  state.activeProjectId=p.id;
+
+  const r=freshReport(p.id);
+  r.date="2026-07-27";
+  r.weatherAM="Overcast";r.weatherAMTemp="11";r.weatherPM="Raining";r.weatherPMTemp="21";
+  r.siteConditionNotes="Muddy";
+  r.workSummary="Installed tee at water main line that goes out to a hydrant, installed 27.2m of water pipe, 3 inch hauling sand and reached rock, picked up safety gear for entering existing sanitary manholes, also picked up the 6x600 tee.";
+  r.rfisNotices="Today CCC asked we had to replace a tee on the main water line that goes to a hydrant.";
+  r.production.push({costCode:"3150-t1",costCodeName:"Supply & install PVC C900 watermain, 300mm dia, 3m depth, shored vertical trench",contractQty:0,forecastQty:0,comments:"Hauled fresh rock from laydown pit",dailyProduction:"Yes",totalProduction:15460,unit:"",subcontractor:"",truckingQty:"",truckingAvgHrs:"",avgCycle:""});
+  r.directLabour.push({costCode:"150",ticket:"45253",position:"Mobilization / demobilization",name:"Darla Roberts",comments:"",totalHours:10,travel:0,truck:"No",truckId:"",loa:"Yes",equipUnitId:"",equipName:"",productiveHrs:"",nonProductiveHrs:"",repairHrs:""});
+  r.directLabour.push({costCode:"7735",ticket:"45255",position:"Hydrovac operator",name:"Gerry Lounsbury",comments:"",totalHours:10,travel:0,truck:"No",truckId:"",loa:"Yes",equipUnitId:"HV42",equipName:"Hydrovac",productiveHrs:6,nonProductiveHrs:2,repairHrs:0});
+  r.subcontractors.push({costCode:"",contractorName:"",comments:"",qtyWorkers:"",rt:"",ot:"",dt:"",subRef:"",poRef:""});
+  computeLabourSplit(r.directLabour,p.otDailyThreshold,p.dtDailyThreshold);
+  state.reports.push(r);
+
+  ["2026-06-22","2026-06-24","2026-06-29"].forEach(dt=>{
+    const rr=freshReport(p.id);
+    rr.date=dt;
+    rr.weatherAM="Sunny";rr.weatherAMTemp="17";
+    rr.directLabour.push({costCode:"3150-t1",ticket:"45253",position:"Operator",name:"Sobota, Darko",comments:"",totalHours:dt==="2026-06-22"?11:10,travel:0,truck:"No",truckId:"",loa:"No",equipUnitId:"EX20",equipName:"Excavator CAT 320",productiveHrs:"",nonProductiveHrs:"",repairHrs:""});
+    computeLabourSplit(rr.directLabour,p.otDailyThreshold,p.dtDailyThreshold);
+    state.reports.push(rr);
+  });
+
+  state.employees=[
+    {id:uid(),name:"Darla Roberts",position:"Mobilization / demobilization",labourType:"Labourer",employeeId:"1101",loginPassword:"1101pass",contractor:false,taxExempt:false,vendor:"",active:true,supervisedProjectIds:[],permissions:freshPermissions()},
+    {id:uid(),name:"Gerry Lounsbury",position:"Hydrovac operator",labourType:"Operator",employeeId:"1102",loginPassword:"1102pass",contractor:false,taxExempt:false,vendor:"",active:true,supervisedProjectIds:[],permissions:freshPermissions()},
+    {id:uid(),name:"Igor Roberts",position:"Foreman",labourType:"Foreman",employeeId:"1103",loginPassword:"1103pass",contractor:false,taxExempt:false,vendor:"",active:true,supervisedProjectIds:[p.id],permissions:{...freshPermissions(),newreport:'edit',savedreports:'edit'}},
+    {id:uid(),name:"Sobota, Darko",position:"Operator",labourType:"Operator",employeeId:"1104",loginPassword:"1104pass",contractor:false,taxExempt:false,vendor:"",active:true,supervisedProjectIds:[],permissions:freshPermissions()},
+    {id:uid(),name:"Zina Kalinov",position:"Class 1 driver",labourType:"Driver",employeeId:"1105",loginPassword:"1105pass",contractor:false,taxExempt:false,vendor:"",active:true,supervisedProjectIds:[],permissions:freshPermissions()}
+  ];
+  state.equipment=[
+    {id:uid(),code:"HV42",name:"Hydrovac",type:"Hydrovac",active:true},
+    {id:uid(),code:"EX20",name:"Excavator CAT 320",type:"Excavator",active:true},
+    {id:uid(),code:"DT04",name:"Dump truck #4",type:"Dump Truck",active:true},
+    {id:uid(),code:"WL08",name:"Wheel loader",type:"Wheel Loader",active:true}
+  ];
+}
+// seed() is now called conditionally during startup, only if no saved data exists
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(state.toastTimer);
+  state.toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+function activeProject(){return state.projects.find(p=>p.id===state.activeProjectId);}
+function dayName(dateStr){return new Date(dateStr+"T00:00:00").toLocaleDateString(undefined,{weekday:'long'});}
+
+const MODULES=[
+  {key:'jobsetup',label:'Job setup'},
+  {key:'employees',label:'Employees'},
+  {key:'equipment',label:'Equipment'},
+  {key:'access',label:'Access control'},
+  {key:'newreport',label:'New report'},
+  {key:'savedreports',label:'Saved reports'}
+];
+function freshPermissions(){
+  const p={};MODULES.forEach(m=>p[m.key]='none');return p;
+}
+function loggedInPerson(){
+  return state.operatorSession?state.employees.find(e=>e.id===state.operatorSession):null;
+}
+function myPermission(moduleKey){
+  if(state.adminMode)return 'edit';
+  const p=loggedInPerson();
+  if(!p||!p.permissions)return 'none';
+  return p.permissions[moduleKey]||'none';
+}
+function canView(moduleKey){return myPermission(moduleKey)!=='none';}
+function canEdit(moduleKey){return myPermission(moduleKey)==='edit';}
+function mySupervisedProjectIds(){
+  if(state.adminMode)return null; // null = unrestricted
+  const p=loggedInPerson();
+  if(!p)return [];
+  if(myPermission('newreport')==='none'&&myPermission('savedreports')==='none')return [];
+  return p.supervisedProjectIds||[];
+}
+function visibleProjects(){
+  const scope=mySupervisedProjectIds();
+  return scope===null?state.projects:state.projects.filter(p=>scope.includes(p.id));
+}
+
+function visibleTabs(){
+  const tabs=[{key:'myentry',label:'My Entry'}];
+  if(canView('newreport'))tabs.push({key:'new',label:'New report'});
+  if(canView('savedreports'))tabs.push({key:'saved',label:'Saved reports'});
+  if(canView('jobsetup'))tabs.push({key:'jobsetup',label:'Job setup'});
+  if(canView('employees'))tabs.push({key:'employees',label:'Employees'});
+  if(canView('equipment'))tabs.push({key:'equipment',label:'Equipment'});
+  if(canView('access'))tabs.push({key:'access',label:'Access control'});
+  return tabs;
+}
+
+function renderTabsBar(){
+  const tabs=visibleTabs();
+  document.getElementById('tabsBar').innerHTML=tabs.map(t=>`<button class="tabbtn ${t.key===state.tab?'active':''}" data-tab="${t.key}">${t.label}</button>`).join('');
+  document.querySelectorAll('#tabsBar .tabbtn').forEach(b=>{
+    b.addEventListener('click',()=>{state.tab=b.dataset.tab;render();});
+  });
+
+  const person=loggedInPerson();
+  const badge=document.getElementById('identityBadge');
+  if(person){
+    const perms=person.permissions||{};
+    const grantedModules=MODULES.filter(m=>perms[m.key]&&perms[m.key]!=='none').map(m=>m.label);
+    const accessLabel=grantedModules.length?grantedModules.join(', '):'My Entry only';
+    badge.textContent='Signed in: '+person.name+' ('+accessLabel+')'+(state.adminMode?' \u00B7 Admin mode':'');
+  }else if(state.adminMode){
+    badge.textContent='Signed in: Admin (master password)';
+  }else{
+    badge.textContent='Not signed in';
+  }
+
+  const adminBtn=document.getElementById('adminToggle');
+  adminBtn.textContent=state.adminMode?'Exit admin mode':'Admin mode';
+  adminBtn.onclick=()=>{
+    if(state.adminMode){
+      state.adminMode=false;
+      if(!visibleTabs().some(t=>t.key===state.tab))state.tab='myentry';
+      render();
+    }else{
+      const pw=window.prompt('Enter admin password:');
+      if(pw===state.adminPassword){
+        state.adminMode=true;
+        state.operatorSession=null;
+        state.myEntryDraft=null;
+        state.tab='jobsetup';
+        render();
+      }
+      else if(pw!==null)showToast('Incorrect password');
+    }
+  };
+}
+
+function generateTicket(projectId,date){
+  const proj=state.projects.find(p=>p.id===projectId);
+  const projCode=proj?(proj.companyProjectNum||proj.clientProjectNum||proj.id.slice(0,4)).toString().replace(/[^A-Za-z0-9]/g,'').slice(0,6).toUpperCase():'JOB';
+  const dateCode=date.replace(/-/g,'');
+  const usedToday=[
+    ...state.operatorEntries.filter(oe=>oe.projectId===projectId&&oe.date===date),
+    ...state.reports.filter(r=>r.projectId===projectId&&r.date===date).flatMap(r=>[...r.directLabour,...r.indirectLabour])
+  ];
+  const seq=usedToday.length+1;
+  return projCode+'-'+dateCode+'-'+String(seq).padStart(3,'0');
+}
+
+function mergeOperatorEntries(r){
+  const pending=state.operatorEntries.filter(oe=>oe.projectId===r.projectId&&oe.date===r.date&&oe.status==='submitted');
+  pending.forEach(oe=>{
+    const already=r.directLabour.some(row=>row._operatorEntryId===oe.id);
+    if(already)return;
+    const emp=state.employees.find(e=>e.id===oe.employeeId);
+    r.directLabour.push({
+      costCode:oe.costCode,ticket:oe.ticket,position:emp?emp.position:"",name:emp?emp.name:"",
+      comments:oe.comments,totalHours:oe.totalHours,travel:oe.travel,truck:oe.truck,truckId:oe.truckId,loa:oe.loa,
+      equipUnitId:oe.equipUnitId,equipName:oe.equipName,equipHours:oe.equipHours||"",productiveHrs:"",nonProductiveHrs:"",repairHrs:"",
+      _operatorEntryId:oe.id
+    });
+  });
+}
+
+function render(){
+  const allowed=visibleTabs().map(t=>t.key);
+  if(!allowed.includes(state.tab))state.tab='myentry';
+  const scope=mySupervisedProjectIds();
+  if(scope!==null&&(!state.activeProjectId||!scope.includes(state.activeProjectId))){
+    state.activeProjectId=scope[0]||null;
+    state.currentReport=null;
+  }
+  if(state.tab==='new'){
+    if(!state.currentReport||state.currentReport.projectId!==state.activeProjectId){
+      const today=new Date().toISOString().slice(0,10);
+      const existing=state.reports.find(r=>r.projectId===state.activeProjectId&&r.date===today);
+      state.currentReport=existing?JSON.parse(JSON.stringify(existing)):freshReport(state.activeProjectId);
+    }
+    mergeOperatorEntries(state.currentReport);
+  }
+  if(state.tab==='myentry'&&state.operatorSession&&!state.myEntryDraft){
+    state.myEntryDraft={projectId:null,date:new Date().toISOString().slice(0,10),costCode:"",totalHours:"",travel:"",truck:"No",truckId:"",loa:"No",equipName:"",equipHours:"",comments:""};
+  }
+  renderTabsBar();
+  const view=document.getElementById('view');
+  if(state.tab==='jobsetup')view.innerHTML=renderJobSetup();
+  else if(state.tab==='employees')view.innerHTML=renderEmployeesPage();
+  else if(state.tab==='equipment')view.innerHTML=renderEquipmentPage();
+  else if(state.tab==='access')view.innerHTML=renderAccessControl();
+  else if(state.tab==='myentry')view.innerHTML=renderMyEntry();
+  else if(state.tab==='new')view.innerHTML=renderNewReport();
+  else view.innerHTML=renderSaved();
+  bindView();
+  schedulePersist();
+}
+
+const STORAGE_KEY='martushev-daily-site-report-v1';
+let persistTimer=null;
+let storageAvailable=(typeof window!=='undefined'&&!!window.storage);
+
+function schedulePersist(){
+  if(!storageAvailable)return;
+  clearTimeout(persistTimer);
+  persistTimer=setTimeout(persistState,500);
+}
+
+async function persistState(){
+  if(!storageAvailable)return;
+  try{
+    const payload={
+      companyName:state.companyName,
+      adminPassword:state.adminPassword,
+      projects:state.projects,
+      employees:state.employees,
+      equipment:state.equipment,
+      reports:state.reports,
+      operatorEntries:state.operatorEntries,
+      notifications:state.notifications
+    };
+    await window.storage.set(STORAGE_KEY,JSON.stringify(payload),true);
+  }catch(e){
+    console.error('Could not save to persistent storage',e);
+  }
+}
+
+async function loadState(){
+  if(!storageAvailable)return false;
+  try{
+    const result=await window.storage.get(STORAGE_KEY,true);
+    if(!result||!result.value)return false;
+    const saved=JSON.parse(result.value);
+    if(!saved||typeof saved!=='object')return false;
+    Object.assign(state,saved);
+    return true;
+  }catch(e){
+    console.error('Could not load persistent storage',e);
+    return false;
+  }
+}
+
+function contactFieldsHtml(prefix,obj){
+  return CONTACT_KEYS.map(k=>`<div><label>${CONTACT_LABELS[k]}</label><input type="text" data-contact="${prefix}.${k}" value="${obj[k]||''}"></div>`).join('');
+}
+
+function renderJobSetup(){
+  if(state.jobEditor)return renderJobEditor();
+  const iCanEdit=canEdit('jobsetup');
+
+  const list=state.projects.map(p=>`
+    <div class="projcard ${p.id===state.activeProjectId?'active':''}" data-selectproj="${p.id}">
+      <div><div class="pn">${p.clientProjectName||'Untitled project'}</div><div class="ps">${p.clientName||''} \u00B7 ${p.clientProjectNum||''}</div></div>
+      ${iCanEdit?`<div style="display:flex;gap:6px;">
+        <button class="btn small" data-openproj="${p.id}">Open</button>
+        <button class="btn small danger" data-delproj="${p.id}">Delete</button>
+      </div>`:''}
+    </div>`).join('') || '<div class="empty">No jobs yet. Create one below.</div>';
+
+  return `
+    ${iCanEdit?`<div class="section-title">Company</div>
+    <div class="card">
+      <label>Company name (report letterhead)</label><input type="text" id="companyName" value="${state.companyName}">
+      <label>Admin password</label><input type="text" id="adminPasswordField" value="${state.adminPassword}">
+    </div>`:''}
+
+    <div class="section-title">Jobs</div>
+    ${!iCanEdit?'<div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px;">You have view-only access here.</div>':''}
+    ${list}
+    ${iCanEdit?'<button class="btn primary" id="btn-newjob" style="padding:12px 20px;font-size:14px;">+ New job</button>':''}
+  `;
+}
+
+function renderJobEditor(){
+  const d=state.jobEditor;
+  d.equipmentRates=d.equipmentRates||{};
+  d.labourRates=d.labourRates||{};
+  d.costCodes=d.costCodes||[];
+  const heading=d._isNew?'New job':'Edit job \u2014 '+(d.clientProjectName||d.clientName||'Untitled');
+
+  const contactBlocks=CONTACT_BLOCKS.map(b=>`
+    <details class="acc"><summary>${b.label}</summary>
+      <div class="acc-body grid2" id="je-${b.key}"></div>
+    </details>`).join('');
+
+  const ccRows=d.costCodes.map(cc=>`
+    <div class="projcard">
+      <div><div class="pn" style="font-size:14px;">${cc.code}${cc.active?'':' \u2014 inactive'}</div><div class="ps">${cc.name||''}</div></div>
+      <div style="display:flex;gap:6px;">
+        <button class="btn small" data-jetogglecc="${cc.id}">${cc.active?'Set inactive':'Set active'}</button>
+        <button class="btn small danger" data-jedelcc="${cc.id}">Delete</button>
+      </div>
+    </div>`).join('') || '<div class="empty">No cost codes yet.</div>';
+
+  const eqTypes=distinctEquipmentTypes();
+  const lbTypes=distinctLabourTypes();
+  const eqRateRows=eqTypes.length?eqTypes.map(t=>`
+    <div class="kv"><span>${t}</span><span><input type="number" step="0.01" style="width:110px;margin:0;" data-jerate="equipmentRates.${t}" value="${d.equipmentRates[t]!==undefined?d.equipmentRates[t]:''}" placeholder="$/hr"></span></div>
+  `).join('') : '<div class="empty">No equipment types yet \u2014 add equipment on the Equipment page first.</div>';
+  const lbRateRows=lbTypes.length?lbTypes.map(t=>`
+    <div class="kv"><span>${t}</span><span><input type="number" step="0.01" style="width:110px;margin:0;" data-jerate="labourRates.${t}" value="${d.labourRates[t]!==undefined?d.labourRates[t]:''}" placeholder="$/hr"></span></div>
+  `).join('') : '<div class="empty">No labour types yet \u2014 add employees on the Employees page first.</div>';
+
+  return `
+    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
+      <span>${heading}</span>
+      <button class="btn small" id="btn-je-back">\u2190 Back to jobs</button>
+    </div>
+
+    <details class="acc" open><summary>1. Basic info <span class="cnt required-marker"></span></summary>
+      <div class="acc-body grid2">
+        <div><label class="required">Client project name</label><input type="text" id="je-clientProjectName" value="${d.clientProjectName}"></div>
+        <div><label>Client name</label><input type="text" id="je-clientName" value="${d.clientName}"></div>
+        <div><label>Client project #</label><input type="text" id="je-clientProjectNum" value="${d.clientProjectNum}"></div>
+        <div><label>Company project #</label><input type="text" id="je-companyProjectNum" value="${d.companyProjectNum}"></div>
+        <div><label>Company project name</label><input type="text" id="je-companyProjectName" value="${d.companyProjectName}"></div>
+        <div><label>Province</label><input type="text" id="je-province" value="${d.province}"></div>
+        <div><label>OT starts after (hrs/day)</label><input type="number" id="je-otT" value="${d.otDailyThreshold}"></div>
+        <div><label>DT starts after (hrs/day)</label><input type="number" id="je-dtT" value="${d.dtDailyThreshold}"></div>
+      </div>
+    </details>
+
+    <details class="acc"><summary>2. Contacts</summary>
+      <div class="acc-body">${contactBlocks}</div>
+    </details>
+
+    <details class="acc"><summary>3. Cost codes <span class="cnt">${d.costCodes.length}</span></summary>
+      <div class="acc-body">
+        ${ccRows}
+        <div class="grid2" style="margin-top:10px;">
+          <div><label>Cost code</label><input type="text" id="je-cccode"></div>
+          <div><label>Cost code name</label><input type="text" id="je-ccname"></div>
+        </div>
+        <button class="btn" id="btn-je-addcc">Add cost code</button>
+      </div>
+    </details>
+
+    <details class="acc"><summary>4. Rate setup</summary>
+      <div class="acc-body">
+        <div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px;">Set a $/hr rate for this job, per equipment type and per labour type. Types come from the company-wide Equipment and Employees directories.</div>
+        <div class="section-title" style="margin-top:0;">Equipment rates</div>
+        ${eqRateRows}
+        <div class="section-title">Labour rates</div>
+        ${lbRateRows}
+      </div>
+    </details>
+
+    <div class="card" style="display:flex;gap:10px;margin-top:16px;">
+      <button class="btn primary block" id="btn-je-save">Save job</button>
+      <button class="btn block" id="btn-je-cancel">Cancel</button>
+    </div>
+  `;
+}
+
+function renderEmployeesPage(){
+  const iCanEdit=canEdit('employees');
+  const empRows=state.employees.map(e=>`
+    <div class="projcard">
+      <div><div class="pn" style="font-size:14px;">${e.name}${e.active?'':' \u2014 inactive'}</div><div class="ps">${e.labourType?e.labourType+' \u00B7 ':''}${e.position||''} \u00B7 Login ID ${e.employeeId||'\u2014'} \u00B7 ${e.loginPassword?'Login set':'No login set'}</div></div>
+      ${iCanEdit?`<div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="btn small" data-editemp="${e.id}">Edit</button>
+        <button class="btn small" data-setpass="${e.id}">Set login password</button>
+        <button class="btn small" data-toggleemp="${e.id}">${e.active?'Set inactive':'Set active'}</button>
+        <button class="btn small danger" data-delemp="${e.id}">Delete</button>
+      </div>`:''}
+    </div>`).join('') || '<div class="empty">No employees yet.</div>';
+
+  const ed=iCanEdit?state.employeeEditor:null;
+  const editCard=ed?`
+    <div class="section-title">Edit employee</div>
+    <div class="card">
+      <div class="grid2">
+        <div><label class="required">Name</label><input type="text" id="ee-name" value="${ed.name}"></div>
+        <div><label class="required">Labour type</label><input type="text" id="ee-labourtype" value="${ed.labourType||''}"></div>
+        <div><label>Position</label><input type="text" id="ee-position" value="${ed.position||''}"></div>
+        <div><label class="required">Employee ID (login ID)</label><input type="text" id="ee-empid" value="${ed.employeeId||''}"></div>
+        <div><label>Associated vendor</label><input type="text" id="ee-vendor" value="${ed.vendor||''}"></div>
+        <div><label>Contractor</label><select id="ee-contractor"><option value="No" ${!ed.contractor?'selected':''}>No</option><option value="Yes" ${ed.contractor?'selected':''}>Yes</option></select></div>
+        <div><label>Tax exempt</label><select id="ee-taxexempt"><option value="No" ${!ed.taxExempt?'selected':''}>No</option><option value="Yes" ${ed.taxExempt?'selected':''}>Yes</option></select></div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn primary" id="btn-ee-save">Save changes</button>
+        <button class="btn" id="btn-ee-cancel">Cancel</button>
+      </div>
+    </div>` : '';
+
+  return `
+    <div class="section-title">Employees \u2014 company wide</div>
+    <div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px;">${iCanEdit?'This directory is shared across every project. Mark someone inactive rather than deleting them once they\'ve appeared on a report. Labour type drives rate setup on each job. Employee ID doubles as their My Entry login \u2014 use "Set login password" to give them access.':'You have view-only access here.'}</div>
+    ${empRows}
+    ${editCard}
+    ${iCanEdit?`<div class="section-title">Add employee</div>
+    <div class="card">
+      <div class="grid2">
+        <div><label class="required">Name</label><input type="text" id="np-empname"></div>
+        <div><label class="required">Labour type</label><input type="text" id="np-emplabourtype" placeholder="e.g. Operator, Labourer, Foreman"></div>
+        <div><label>Position</label><input type="text" id="np-empposition"></div>
+        <div><label class="required">Employee ID (login ID)</label><input type="text" id="np-empid"></div>
+        <div><label>Login password</label><input type="text" id="np-emppassword" placeholder="optional \u2014 can set later"></div>
+        <div><label>Associated vendor</label><input type="text" id="np-empvendor"></div>
+        <div><label>Contractor</label><select id="np-empcontractor"><option value="No">No</option><option value="Yes">Yes</option></select></div>
+        <div><label>Tax exempt</label><select id="np-emptaxexempt"><option value="No">No</option><option value="Yes">Yes</option></select></div>
+      </div>
+      <button class="btn primary" id="btn-addemp">Add employee</button>
+    </div>`:''}
+  `;
+}
+
+function renderAccessControl(){
+  const iCanEdit=canEdit('access');
+  const rows=state.employees.map(e=>{
+    const perms=e.permissions||freshPermissions();
+    const needsJobs=perms.newreport!=='none'||perms.savedreports!=='none';
+    const grid=MODULES.map(m=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--line-soft);">
+        <span style="font-size:13px;">${m.label}</span>
+        <select data-permsel="${e.id}.${m.key}" style="width:auto;margin:0;" ${iCanEdit?'':'disabled'}>
+          <option value="none" ${perms[m.key]==='none'?'selected':''}>No access</option>
+          <option value="view" ${perms[m.key]==='view'?'selected':''}>View only</option>
+          <option value="edit" ${perms[m.key]==='edit'?'selected':''}>View &amp; edit</option>
+        </select>
+      </div>`).join('');
+    const jobChecks=needsJobs?`
+      <div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);">
+        <label style="margin-bottom:6px;">Which jobs (for New report / Saved reports access)</label>
+        ${state.projects.map(p=>`
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;margin-bottom:6px;">
+            <input type="checkbox" data-supervises="${e.id}.${p.id}" ${((e.supervisedProjectIds||[]).includes(p.id))?'checked':''} ${iCanEdit?'':'disabled'}>
+            ${p.clientProjectName||p.clientName||'Untitled job'}
+          </label>`).join('')||'<div class="empty">No jobs exist yet \u2014 create one on Job setup first.</div>'}
+      </div>` : '';
+    return `
+      <div class="card">
+        <div class="pn" style="font-family:var(--font-display);font-weight:600;margin-bottom:8px;">${e.name}${e.active?'':' \u2014 inactive'}</div>
+        ${grid}
+        ${jobChecks}
+      </div>`;
+  }).join('')||'<div class="empty">No employees yet \u2014 add people on the Employees page first.</div>';
+
+  return `
+    <div class="section-title">Access control</div>
+    <div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px;">${iCanEdit?'Set exactly what each person can see and change, module by module. View only lets someone look without changing anything; View & edit gives full control of that module. For New report / Saved reports, also pick which specific jobs they can access.':'You have view-only access to Access control \u2014 changes are disabled.'}</div>
+    ${rows}
+  `;
+}
+
+function renderEquipmentPage(){
+  const iCanEdit=canEdit('equipment');
+  const eqRows=state.equipment.map(e=>`
+    <div class="projcard">
+      <div><div class="pn" style="font-size:14px;">${e.name}${e.active?'':' \u2014 inactive'}</div><div class="ps">${e.type?e.type+' \u00B7 ':''}Unit ${e.code||'\u2014'}</div></div>
+      ${iCanEdit?`<div style="display:flex;gap:6px;">
+        <button class="btn small" data-editeq="${e.id}">Edit</button>
+        <button class="btn small" data-toggleeq="${e.id}">${e.active?'Set inactive':'Set active'}</button>
+        <button class="btn small danger" data-deleq="${e.id}">Delete</button>
+      </div>`:''}
+    </div>`).join('') || '<div class="empty">No equipment yet.</div>';
+
+  const ed=iCanEdit?state.equipmentEditor:null;
+  const editCard=ed?`
+    <div class="section-title">Edit equipment</div>
+    <div class="card">
+      <div class="grid2">
+        <div><label class="required">Unit ID</label><input type="text" id="ee-eqcode" value="${ed.code||''}"></div>
+        <div><label class="required">Equipment name</label><input type="text" id="ee-eqname" value="${ed.name}"></div>
+        <div><label class="required">Equipment type</label><input type="text" id="ee-eqtype" value="${ed.type||''}"></div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn primary" id="btn-eqed-save">Save changes</button>
+        <button class="btn" id="btn-eqed-cancel">Cancel</button>
+      </div>
+    </div>` : '';
+
+  return `
+    <div class="section-title">Equipment \u2014 company wide</div>
+    <div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px;">${iCanEdit?'This fleet list is shared across every project. Mark equipment inactive rather than deleting it once it\'s appeared on a report. Equipment type drives rate setup on each job.':'You have view-only access here.'}</div>
+    ${eqRows}
+    ${editCard}
+    ${iCanEdit?`<div class="section-title">Add equipment</div>
+    <div class="card">
+      <div class="grid2">
+        <div><label class="required">Unit ID</label><input type="text" id="np-eqcode"></div>
+        <div><label class="required">Equipment name</label><input type="text" id="np-eqname"></div>
+        <div><label class="required">Equipment type</label><input type="text" id="np-eqtype" placeholder="e.g. Excavator, Hydrovac, Dump Truck"></div>
+      </div>
+      <button class="btn primary" id="btn-addeq">Add equipment</button>
+    </div>`:''}
+  `;
+}
+
+function renderMyEntry(){
+  if(!state.operatorSession){
+    return `
+      <div class="section-title">Employee login</div>
+      <div class="card">
+        <div style="font-size:12px;color:var(--ink-soft);margin-bottom:12px;">Log in with the Employee ID and password your admin set up for you.</div>
+        <label>Employee ID</label><input type="text" id="me-loginid" autocomplete="username">
+        <label>Password</label><input type="password" id="me-loginpw" autocomplete="current-password">
+        <button class="btn primary block" id="btn-me-login" style="margin-top:4px;">Log in</button>
+      </div>
+    `;
+  }
+
+  const emp=state.employees.find(e=>e.id===state.operatorSession);
+  if(!emp||!emp.active){
+    return `<div class="empty">Your account is no longer active. Contact your admin.</div><button class="btn" id="btn-me-logout" style="margin-top:10px;">Log out</button>`;
+  }
+
+  const d=state.myEntryDraft;
+  const proj=d.projectId?state.projects.find(p=>p.id===d.projectId):null;
+  const projOpts=state.projects.map(p=>`<option value="${p.id}" ${p.id===d.projectId?'selected':''}>${p.clientProjectName||p.clientName}</option>`).join('');
+
+  let formHtml='';
+  if(proj){
+    const ccOpts=(proj.costCodes||[]).filter(c=>c.active).map(c=>`<option value="${c.code}" ${d.costCode===c.code?'selected':''}>${c.code} \u2014 ${c.name}</option>`).join('');
+    const truckOpts=["No","Personal Truck","Company Truck"].map(o=>`<option value="${o}" ${d.truck===o?'selected':''}>${o}</option>`).join('');
+    formHtml=`
+      <div class="grid2">
+        <div><label class="required">Cost code</label><select id="me-costcode"><option value="">Select cost code</option>${ccOpts}</select></div>
+        <div><label class="required">Total hours</label><input type="number" step="0.25" id="me-hours" value="${d.totalHours||''}"></div>
+        <div><label>Travel</label><input type="number" step="0.25" id="me-travel" value="${d.travel||''}"></div>
+        <div><label>Pickup truck</label><select id="me-truck">${truckOpts}</select></div>
+        <div><label>Truck ID</label><input type="text" id="me-truckid" value="${d.truckId||''}" ${d.truck==='No'?'disabled placeholder="N/A"':''}></div>
+        <div><label>LOA</label><select id="me-loa"><option value="No" ${d.loa==='No'?'selected':''}>No</option><option value="Yes" ${d.loa==='Yes'?'selected':''}>Yes</option></select></div>
+        <div><label>Equipment used</label><input type="text" id="me-equip" value="${d.equipName||''}" placeholder="Type equipment name"></div>
+        <div><label>Equipment hours</label><input type="number" step="0.25" id="me-equiphours" value="${d.equipHours||''}"></div>
+      </div>
+      <label>Comments</label><textarea id="me-comments">${d.comments||''}</textarea>
+      <button class="btn primary block" id="btn-me-submit" style="padding:12px;font-size:14px;">Add this activity for ${d.date}</button>
+    `;
+  }else{
+    formHtml=`<div class="empty">Select a project above to enter today's details.</div>`;
+  }
+
+  const todaysEntries=proj?state.operatorEntries.filter(oe=>oe.employeeId===emp.id&&oe.projectId===d.projectId&&oe.date===d.date):[];
+  const todaysHours=todaysEntries.reduce((s,e)=>s+(Number(e.totalHours)||0),0);
+  const todaysListHtml=proj?`
+    <div class="section-title" style="margin-top:0;">Activities added for ${d.date} <span style="font-weight:400;text-transform:none;letter-spacing:0;">(${todaysEntries.length} \u00B7 ${todaysHours.toFixed(2)} hrs so far)</span></div>
+    ${todaysEntries.length?todaysEntries.map(oe=>{
+      const locked=oe.status==='confirmed';
+      return `<div class="reportcard">
+        <div class="rh">
+          <div><div class="rn">${oe.costCode}</div><div class="rs">${oe.totalHours} hrs \u00B7 Ticket ${oe.ticket}</div></div>
+          <div class="stamp ${locked?'approved':'pending'}">${locked?'Confirmed':'Submitted'}</div>
+        </div>
+        ${locked?'':`<div style="display:flex;gap:8px;"><button class="btn small" data-me-edit="${oe.id}">Edit</button><button class="btn small danger" data-me-del="${oe.id}">Delete</button></div>`}
+      </div>`;
+    }).join(''):'<div class="empty">Nothing added yet for this date.</div>'}
+    <div style="font-size:12px;color:var(--ink-soft);margin:6px 0 14px;">Worked on more than one cost code today? Fill in the form below again for each one \u2014 every activity gets its own line and its own ticket number automatically.</div>
+  `:'';
+
+  const mine=state.operatorEntries.filter(oe=>oe.employeeId===emp.id).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,15);
+  const historyRows=mine.map(oe=>{
+    const p=state.projects.find(pp=>pp.id===oe.projectId);
+    const locked=oe.status==='confirmed';
+    return `
+    <div class="reportcard">
+      <div class="rh">
+        <div><div class="rn">${oe.date}</div><div class="rs">${p?(p.clientProjectName||p.clientName):'Unknown job'} \u00B7 ${oe.totalHours||0} hrs \u00B7 ${oe.costCode||'\u2014'}</div></div>
+        <div class="stamp ${locked?'approved':'pending'}">${locked?'Confirmed':'Submitted'}</div>
+      </div>
+      ${locked?'':`<div style="display:flex;gap:8px;"><button class="btn small" data-me-edit="${oe.id}">Edit</button><button class="btn small danger" data-me-del="${oe.id}">Delete</button></div>`}
+    </div>`;
+  }).join('')||'<div class="empty">No submissions yet.</div>';
+
+  const myNotifications=state.notifications.filter(n=>n.employeeId===emp.id).sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
+  const unread=myNotifications.filter(n=>!n.read);
+  const notifHtml=myNotifications.length?`
+    <div class="section-title">Notifications ${unread.length?`<span class="cnt">${unread.length} new</span>`:''}</div>
+    ${myNotifications.slice(0,10).map(n=>`
+      <div class="card" style="${n.read?'':'border-color:var(--accent);'}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+          <div>
+            <div style="font-size:13px;font-weight:600;">${n.changedBy} changed your ${n.date} entry (Ticket ${n.ticket})</div>
+            <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">
+              ${n.changes.map(c=>`${c.label}: ${c.oldValue} \u2192 ${c.newValue}`).join('<br>')}
+            </div>
+          </div>
+          ${n.read?'':`<button class="btn small" data-notif-read="${n.id}">Mark read</button>`}
+        </div>
+      </div>`).join('')}
+  `:'';
+
+  return `
+    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
+      <span>Logged in as ${emp.name}</span>
+      <button class="btn small" id="btn-me-logout">Log out</button>
+    </div>
+    ${notifHtml}
+    <div class="card">
+      <div class="grid2">
+        <div><label class="required">Project</label><select id="me-project"><option value="">Select project</option>${projOpts}</select></div>
+        <div><label class="required">Date</label><input type="date" id="me-date" value="${d.date}"></div>
+      </div>
+      ${formHtml}
+    </div>
+    ${todaysListHtml}
+    <div class="section-title">Your recent submissions</div>
+    ${historyRows}
+  `;
+}
+
+
+function renderNewReport(){
+  const proj=activeProject();
+  if(!proj)return `<div class="empty">${mySupervisedProjectIds()!==null?'No job has been assigned to you yet \u2014 ask your admin to assign one on Access Control.':'Select or create a project on the Job setup tab first.'}</div>`;
+  const r=state.currentReport;
+  const iCanEdit=canEdit('newreport');
+  const dis=iCanEdit?'':'disabled';
+
+  const contactSummary=CONTACT_BLOCKS.map(b=>`<div class="kv"><span>${b.label}</span><span>${proj[b.key].contact||'\u2014'}</span></div>`).join('');
+
+  const incidentRows=r.incidentLog.map((row,i)=>`
+    <tr>
+      <td style="font-size:12px;white-space:nowrap;">${row.type}</td>
+      <td><input ${dis} type="text" data-inc="${i}.comment" value="${row.comment}"></td>
+      <td><input ${dis} type="number" data-inc="${i}.today" value="${row.today}" style="width:60px;"></td>
+      <td><input ${dis} type="number" data-inc="${i}.toDate" value="${row.toDate}" style="width:60px;"></td>
+    </tr>`).join('');
+
+  const photos=r.photos.map((p,i)=>`<img class="thumb" src="${p}" data-rmphoto="${i}">`).join('');
+
+  const otT=Number(proj.otDailyThreshold)||8;
+  const dtT=Number(proj.dtDailyThreshold)||12;
+  computeLabourSplit(r.directLabour,otT,dtT);
+  computeLabourSplit(r.indirectLabour,otT,dtT);
+
+  const dynSections=Object.keys(SECTIONS).map(key=>renderDynSection(key,r[key])).join('');
+
+  return `
+    ${iCanEdit?'':'<div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px;">You have view-only access here \u2014 fields are shown but cannot be changed.</div>'}
+    <div class="section-title">Report details</div>
+    <div class="card">
+      <div class="grid3">
+        <div><label>Project</label><select ${dis} id="rf-project">${visibleProjects().map(p=>`<option value="${p.id}" ${p.id===proj.id?'selected':''}>${p.clientProjectName||p.clientName}</option>`).join('')}</select></div>
+        <div><label>Date</label><input ${dis} type="date" id="rf-date" value="${r.date}"></div>
+        <div><label>Shift</label><select ${dis} id="rf-shift"><option ${r.shift==='Day'?'selected':''}>Day</option><option ${r.shift==='Night'?'selected':''}>Night</option></select></div>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:12px;color:var(--ink-soft);">Day: ${dayName(r.date)}</div>
+    </div>
+
+    <details class="acc" open><summary>Project & contacts <span class="cnt">from project setup</span></summary>
+      <div class="acc-body">${contactSummary}</div>
+    </details>
+
+    <details class="acc"><summary>Accident / incident log</summary>
+      <div class="acc-body dyn-wrap"><table class="dyn"><thead><tr><th>Type</th><th>Comment</th><th>Today</th><th>To date</th></tr></thead><tbody>${incidentRows}</tbody></table></div>
+    </details>
+
+    <details class="acc"><summary>Daily HSE highlights</summary>
+      <div class="acc-body"><textarea ${dis} id="rf-hse">${r.hseHighlights}</textarea></div>
+    </details>
+
+    <details class="acc"><summary>Daily description of site</summary>
+      <div class="acc-body">
+        <div class="grid2">
+          <div class="weatherrow">
+            <div style="flex:1;"><label>Weather AM</label><select ${dis} id="rf-weatherAM"><option value="">Select</option>${WEATHER_OPTIONS.map(w=>`<option ${r.weatherAM===w?'selected':''}>${w}</option>`).join('')}</select></div>
+            <div style="width:70px;"><label>Temp C</label><input ${dis} type="number" id="rf-weatherAMTemp" value="${r.weatherAMTemp}"></div>
+          </div>
+          <div class="weatherrow">
+            <div style="flex:1;"><label>Weather PM</label><select ${dis} id="rf-weatherPM"><option value="">Select</option>${WEATHER_OPTIONS.map(w=>`<option ${r.weatherPM===w?'selected':''}>${w}</option>`).join('')}</select></div>
+            <div style="width:70px;"><label>Temp C</label><input ${dis} type="number" id="rf-weatherPMTemp" value="${r.weatherPMTemp}"></div>
+          </div>
+        </div>
+        ${iCanEdit?'<button class="btn small" id="btn-useweather" style="margin-bottom:10px;">Use current location weather (AM)</button>':''}
+        <label>Site condition notes</label><input ${dis} type="text" id="rf-siteCond" value="${r.siteConditionNotes}">
+        <label>Notes for project team</label><textarea ${dis} id="rf-notesTeam">${r.notesForTeam}</textarea>
+      </div>
+    </details>
+
+    <details class="acc"><summary>Daily summary of work performed</summary>
+      <div class="acc-body"><textarea ${dis} id="rf-worksum" style="min-height:90px;">${r.workSummary}</textarea></div>
+    </details>
+
+    <details class="acc"><summary>RFIs, notices, client comments, deviations</summary>
+      <div class="acc-body"><textarea ${dis} id="rf-rfis">${r.rfisNotices}</textarea></div>
+    </details>
+
+    ${dynSections}
+
+    <details class="acc"><summary>Site photos</summary>
+      <div class="acc-body">
+        <div class="photostrip">${photos}</div>
+        ${iCanEdit?`<div style="display:flex;gap:8px;">
+          <label class="btn small" style="cursor:pointer;">Take photo<input type="file" id="rf-photo-camera" accept="image/*" capture="environment" style="display:none"></label>
+          <label class="btn small" style="cursor:pointer;">Add from library<input type="file" id="rf-photo-library" accept="image/*" style="display:none"></label>
+        </div>`:''}
+      </div>
+    </details>
+
+    ${iCanEdit?`<div class="card" style="display:flex;gap:10px;align-items:center;margin-top:6px;">
+      <button class="btn primary" id="btn-savereport" style="padding:12px 20px;font-size:14px;">Save draft</button>
+      <button class="btn" id="btn-confirmreport" style="padding:12px 20px;font-size:14px;border-color:var(--green);color:var(--green);">Confirm &amp; submit</button>
+      <span style="font-size:12px;color:var(--ink-soft);margin-left:auto;">Status: <strong>${r.status==='confirmed'?'Confirmed':'Draft'}</strong></span>
+    </div>`:`<div class="card" style="margin-top:6px;"><span style="font-size:12px;color:var(--ink-soft);">Status: <strong>${r.status==='confirmed'?'Confirmed':'Draft'}</strong></span></div>`}
+  `;
+}
+
+function renderDynSection(key,rows){
+  const cfg=SECTIONS[key];
+  const dis=canEdit('newreport')?'':'disabled';
+  const headRow=cfg.columns.map(c=>`<th>${c.label}</th>`).join('')+'<th></th>';
+  const bodyRows=rows.map((row,i)=>{
+    const cells=cfg.columns.map(c=>{
+      if(c.type==='select'){
+        return `<td><select ${dis} data-dyn="${key}.${i}.${c.key}"><option value="">-</option>${c.options.map(o=>`<option ${row[c.key]===o?'selected':''}>${o}</option>`).join('')}</select></td>`;
+      }
+      if(c.type==='employee-select'){
+        const opts=state.employees.slice().sort((a,b)=>(b.active-a.active)||a.name.localeCompare(b.name))
+          .map(e=>`<option value="${e.name}" ${row[c.key]===e.name?'selected':''}>${e.name}${e.active?'':' (inactive)'}</option>`).join('');
+        return `<td><select ${dis} data-dyn="${key}.${i}.${c.key}"><option value="">Select employee</option>${opts}</select></td>`;
+      }
+      if(c.type==='equipment-select'){
+        const opts=state.equipment.slice().sort((a,b)=>(b.active-a.active)||a.name.localeCompare(b.name))
+          .map(e=>`<option value="${e.name}" ${row[c.key]===e.name?'selected':''}>${e.name}${e.active?'':' (inactive)'}</option>`).join('');
+        return `<td><select ${dis} data-dyn="${key}.${i}.${c.key}"><option value="">Select equipment</option>${opts}</select></td>`;
+      }
+      if(c.type==='costcode-select'){
+        const proj=activeProject();
+        const codes=proj?proj.costCodes.slice().sort((a,b)=>(b.active-a.active)||a.code.localeCompare(b.code)):[];
+        const opts=codes.map(cc=>`<option value="${cc.code}" ${row[c.key]===cc.code?'selected':''}>${cc.code}${cc.name?' \u2014 '+cc.name:''}${cc.active?'':' (inactive)'}</option>`).join('');
+        return `<td><select ${dis} data-dyn="${key}.${i}.${c.key}"><option value="">Select cost code</option>${opts}</select></td>`;
+      }
+      if(c.type==='computed'){
+        return `<td style="font-family:var(--font-mono);color:var(--ink-soft);white-space:nowrap;">${row[c.key]!==undefined?row[c.key]:'0.00'}</td>`;
+      }
+      return `<td><input ${dis} type="${c.type}" data-dyn="${key}.${i}.${c.key}" value="${row[c.key]!==undefined?row[c.key]:''}"></td>`;
+    }).join('');
+    return `<tr>${cells}<td>${canEdit('newreport')?`<button class="rmrow" data-rmrow="${key}.${i}">\u2715</button>`:''}</td></tr>`;
+  }).join('');
+  return `
+    <details class="acc"><summary>${cfg.label} <span class="cnt">${rows.length} row${rows.length===1?'':'s'}</span></summary>
+      <div class="acc-body">
+        <div class="dyn-wrap"><table class="dyn"><thead><tr>${headRow}</tr></thead><tbody>${bodyRows}</tbody></table></div>
+        ${canEdit('newreport')?`<button class="btn small" data-addrow="${key}">Add row</button>`:''}
+      </div>
+    </details>`;
+}
+
+function reportCardHtml(r){
+  return `
+    <div class="reportcard">
+      <div class="rh">
+        <div><div class="rn">${r.date}</div><div class="rs">${r.shift} shift \u00B7 ${dayName(r.date)}</div></div>
+        <div class="stamp ${r.status==='confirmed'?'approved':'pending'}">${r.status==='confirmed'?'Confirmed':'Draft'}</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${canEdit('newreport')?`<button class="btn small" data-editreport="${r.id}">Edit</button>`:''}
+        <button class="btn small" data-pdf="${r.id}">Export PDF (client)</button>
+        ${canEdit('savedreports')?`<button class="btn small danger" data-delreport="${r.id}">Delete</button>`:''}
+      </div>
+    </div>`;
+}
+
+function renderSaved(){
+  const scopedProjects=visibleProjects();
+  const scopedProjectIds=new Set(scopedProjects.map(p=>p.id));
+  const scopedReports=state.reports.filter(r=>scopedProjectIds.has(r.projectId));
+
+  const today=new Date().toISOString().slice(0,10);
+  const twoWeeksAgo=new Date(Date.now()-13*86400000).toISOString().slice(0,10);
+  const payrollCard=scopedProjects.length?`
+    <div class="section-title">Payroll export</div>
+    <div class="card">
+      <div class="grid2">
+        <div><label>Pay period start</label><input type="date" id="pr-start" value="${twoWeeksAgo}"></div>
+        <div><label>Pay period end</label><input type="date" id="pr-end" value="${today}"></div>
+      </div>
+      <div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px;">Generates one Employee Timesheet workbook, one sheet per employee, covering every job that employee worked across ${state.adminMode?'ALL projects':'your assigned jobs'} in that date range \u2014 formatted for payroll.</div>
+      <button class="btn primary" id="btn-payroll">Generate payroll Excel</button>
+    </div>` : '';
+
+  if(scopedReports.length===0)return payrollCard+`<div class="empty">No reports saved yet.</div>`;
+
+  const tree={};
+  scopedReports.forEach(r=>{
+    const proj=state.projects.find(p=>p.id===r.projectId);
+    const pname=proj?(proj.clientProjectName||proj.clientName||'Untitled project'):'Unknown project';
+    const d=new Date(r.date+'T00:00:00');
+    const year=d.getFullYear();
+    const month=d.toLocaleDateString(undefined,{month:'long'});
+    tree[pname]=tree[pname]||{};
+    tree[pname][year]=tree[pname][year]||{};
+    tree[pname][year][month]=tree[pname][year][month]||[];
+    tree[pname][year][month].push(r);
+  });
+
+  let html=payrollCard+'<div class="section-title">Saved reports</div>';
+  Object.keys(tree).sort().forEach(pname=>{
+    const years=tree[pname];
+    const pCount=Object.values(years).reduce((s,mo)=>s+Object.values(mo).reduce((s2,arr)=>s2+arr.length,0),0);
+    html+=`<details class="acc"><summary>${pname} <span class="cnt">${pCount} report${pCount===1?'':'s'}</span></summary><div class="acc-body">`;
+    Object.keys(years).sort((a,b)=>b-a).forEach(year=>{
+      const months=years[year];
+      const yCount=Object.values(months).reduce((s,arr)=>s+arr.length,0);
+      html+=`<details class="acc"><summary>${year} <span class="cnt">${yCount}</span></summary><div class="acc-body">`;
+      Object.keys(months)
+        .map(mname=>({mname,reports:months[mname],idx:new Date(months[mname][0].date+'T00:00:00').getMonth()}))
+        .sort((a,b)=>b.idx-a.idx)
+        .forEach(me=>{
+          html+=`<details class="acc"><summary>${me.mname} <span class="cnt">${me.reports.length}</span></summary><div class="acc-body">`;
+          me.reports.sort((a,b)=>b.date.localeCompare(a.date)).forEach(r=>{html+=reportCardHtml(r);});
+          html+='</div></details>';
+        });
+      html+='</div></details>';
+    });
+    html+='</div></details>';
+  });
+  return html;
+}
+
+function bindView(){
+  if(state.tab==='jobsetup'&&!state.jobEditor){
+    document.getElementById('companyName').addEventListener('change',e=>{state.companyName=e.target.value;});
+    bindIf('adminPasswordField','change',e=>{state.adminPassword=e.target.value||'admin123';});
+    document.querySelectorAll('[data-openproj]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const proj=state.projects.find(p=>p.id===btn.dataset.openproj);
+        const draft=JSON.parse(JSON.stringify(proj));
+        draft._isNew=false;draft._origId=proj.id;
+        state.jobEditor=draft;render();
+      });
+    });
+    document.querySelectorAll('[data-selectproj]').forEach(el=>{
+      el.addEventListener('click',e=>{
+        if(e.target.closest('button'))return;
+        state.activeProjectId=el.dataset.selectproj;render();
+      });
+    });
+    document.querySelectorAll('[data-delproj]').forEach(el=>{
+      el.addEventListener('click',()=>{
+        state.projects=state.projects.filter(p=>p.id!==el.dataset.delproj);
+        if(state.activeProjectId===el.dataset.delproj)state.activeProjectId=state.projects[0]?state.projects[0].id:null;
+        render();
+      });
+    });
+    bindIf('btn-newjob','click',()=>{
+      const draft=freshProject();
+      draft._isNew=true;draft._origId=null;
+      state.jobEditor=draft;render();
+    });
+  }
+
+  if(state.tab==='jobsetup'&&state.jobEditor){
+    const d=state.jobEditor;
+    const bindField=(id,key,transform)=>{
+      const el=document.getElementById(id);
+      if(!el)return;
+      el.addEventListener('input',()=>{d[key]=transform?transform(el.value):el.value;});
+      el.addEventListener('change',()=>{d[key]=transform?transform(el.value):el.value;});
+    };
+    bindField('je-clientProjectName','clientProjectName');
+    bindField('je-clientName','clientName');
+    bindField('je-clientProjectNum','clientProjectNum');
+    bindField('je-companyProjectNum','companyProjectNum');
+    bindField('je-companyProjectName','companyProjectName');
+    bindField('je-province','province');
+    bindField('je-otT','otDailyThreshold',v=>Number(v)||8);
+    bindField('je-dtT','dtDailyThreshold',v=>Number(v)||12);
+
+    CONTACT_BLOCKS.forEach(b=>{
+      document.getElementById('je-'+b.key).innerHTML=contactFieldsHtml('je.'+b.key,d[b.key]);
+    });
+    document.querySelectorAll('[data-contact]').forEach(inp=>{
+      inp.addEventListener('input',()=>{
+        const [prefix,key]=inp.dataset.contact.split('.').slice(1);
+        if(d[prefix])d[prefix][key]=inp.value;
+      });
+    });
+
+    document.querySelectorAll('[data-jetogglecc]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const cc=d.costCodes.find(c=>c.id===btn.dataset.jetogglecc);
+        cc.active=!cc.active;render();
+      });
+    });
+    document.querySelectorAll('[data-jedelcc]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        d.costCodes=d.costCodes.filter(c=>c.id!==btn.dataset.jedelcc);
+        render();
+      });
+    });
+    bindIf('btn-je-addcc','click',()=>{
+      const code=val('je-cccode');
+      if(!code){showToast('Enter a cost code');return;}
+      d.costCodes.push({id:uid(),code,name:val('je-ccname'),active:true});
+      showToast('Cost code added');render();
+    });
+
+    document.querySelectorAll('[data-jerate]').forEach(inp=>{
+      inp.addEventListener('change',()=>{
+        const [bucket,type]=inp.dataset.jerate.split('.');
+        d[bucket][type]=inp.value===''?undefined:Number(inp.value);
+      });
+    });
+
+    bindIf('btn-je-back','click',()=>{state.jobEditor=null;render();});
+    bindIf('btn-je-cancel','click',()=>{state.jobEditor=null;render();});
+    bindIf('btn-je-save','click',()=>{
+      if(!d.clientProjectName||!d.clientProjectName.trim()){
+        showToast('Client project name is required');
+        return;
+      }
+      const {_isNew,_origId,...clean}=d;
+      if(_isNew){
+        state.projects.push(clean);
+        state.activeProjectId=clean.id;
+        showToast('Job created');
+      }else{
+        const idx=state.projects.findIndex(p=>p.id===_origId);
+        if(idx>-1)state.projects[idx]=clean;
+        showToast('Job updated');
+      }
+      state.jobEditor=null;
+      render();
+    });
+  }
+
+  if(state.tab==='employees'){
+    document.querySelectorAll('[data-toggleemp]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const emp=state.employees.find(e=>e.id===btn.dataset.toggleemp);
+        emp.active=!emp.active;render();
+      });
+    });
+    document.querySelectorAll('[data-delemp]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        state.employees=state.employees.filter(e=>e.id!==btn.dataset.delemp);render();
+      });
+    });
+    document.querySelectorAll('[data-setpass]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const emp=state.employees.find(e=>e.id===btn.dataset.setpass);
+        const pw=window.prompt('Set login password for '+emp.name+' (login ID: '+(emp.employeeId||'not set')+'):',emp.loginPassword||'');
+        if(pw===null)return;
+        if(!emp.employeeId){showToast('Set an Employee ID for this person first');return;}
+        emp.loginPassword=pw;
+        showToast('Login password updated for '+emp.name);
+        render();
+      });
+    });
+    document.querySelectorAll('[data-editemp]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        state.employeeEditor=JSON.parse(JSON.stringify(state.employees.find(e=>e.id===btn.dataset.editemp)));
+        render();
+      });
+    });
+    bindIf('btn-ee-cancel','click',()=>{state.employeeEditor=null;render();});
+    bindIf('btn-ee-save','click',()=>{
+      const ed=state.employeeEditor;
+      const name=val('ee-name');
+      const labourType=val('ee-labourtype');
+      const employeeId=val('ee-empid');
+      if(!name){showToast('Enter an employee name');return;}
+      if(!labourType){showToast('Enter a labour type');return;}
+      if(!employeeId){showToast('Enter an Employee ID');return;}
+      const dupe=state.employees.find(e=>e.employeeId===employeeId&&e.id!==ed.id);
+      if(dupe){showToast('That Employee ID is already used by '+dupe.name+' \u2014 IDs must be unique since they double as logins');return;}
+      const idx=state.employees.findIndex(e=>e.id===ed.id);
+      state.employees[idx]={...state.employees[idx],name,labourType,employeeId,
+        position:val('ee-position'),vendor:val('ee-vendor'),
+        contractor:val('ee-contractor')==='Yes',taxExempt:val('ee-taxexempt')==='Yes'};
+      showToast('Employee updated');
+      state.employeeEditor=null;render();
+    });
+    bindIf('btn-addemp','click',()=>{
+      const name=val('np-empname');
+      const labourType=val('np-emplabourtype');
+      const employeeId=val('np-empid');
+      if(!name){showToast('Enter an employee name');return;}
+      if(!labourType){showToast('Enter a labour type (used for job rate setup)');return;}
+      if(!employeeId){showToast('Enter an Employee ID (used as their login)');return;}
+      if(state.employees.some(e=>e.employeeId===employeeId)){showToast('That Employee ID is already in use \u2014 IDs must be unique since they double as logins');return;}
+      state.employees.push({id:uid(),name,labourType,position:val('np-empposition'),employeeId,loginPassword:val('np-emppassword'),vendor:val('np-empvendor'),contractor:val('np-empcontractor')==='Yes',taxExempt:val('np-emptaxexempt')==='Yes',active:true,supervisedProjectIds:[],permissions:freshPermissions()});
+      showToast('Employee added');render();
+    });
+  }
+
+  if(state.tab==='access'){
+    if(canEdit('access')){
+      document.querySelectorAll('[data-permsel]').forEach(sel=>{
+        sel.addEventListener('change',()=>{
+          const [empId,moduleKey]=sel.dataset.permsel.split('.');
+          const emp=state.employees.find(e=>e.id===empId);
+          emp.permissions=emp.permissions||freshPermissions();
+          emp.permissions[moduleKey]=sel.value;
+          if(!emp.supervisedProjectIds)emp.supervisedProjectIds=[];
+          showToast(emp.name+"'s "+MODULES.find(m=>m.key===moduleKey).label+' access set to '+sel.value);
+          render();
+        });
+      });
+      document.querySelectorAll('[data-supervises]').forEach(cb=>{
+        cb.addEventListener('change',()=>{
+          const [empId,projId]=cb.dataset.supervises.split('.');
+          const emp=state.employees.find(e=>e.id===empId);
+          emp.supervisedProjectIds=emp.supervisedProjectIds||[];
+          if(cb.checked){
+            if(!emp.supervisedProjectIds.includes(projId))emp.supervisedProjectIds.push(projId);
+          }else{
+            emp.supervisedProjectIds=emp.supervisedProjectIds.filter(id=>id!==projId);
+          }
+          render();
+        });
+      });
+    }
+  }
+
+  if(state.tab==='equipment'){
+    document.querySelectorAll('[data-toggleeq]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const eq=state.equipment.find(e=>e.id===btn.dataset.toggleeq);
+        eq.active=!eq.active;render();
+      });
+    });
+    document.querySelectorAll('[data-deleq]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        state.equipment=state.equipment.filter(e=>e.id!==btn.dataset.deleq);render();
+      });
+    });
+    document.querySelectorAll('[data-editeq]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        state.equipmentEditor=JSON.parse(JSON.stringify(state.equipment.find(e=>e.id===btn.dataset.editeq)));
+        render();
+      });
+    });
+    bindIf('btn-eqed-cancel','click',()=>{state.equipmentEditor=null;render();});
+    bindIf('btn-eqed-save','click',()=>{
+      const ed=state.equipmentEditor;
+      const name=val('ee-eqname');
+      const code=val('ee-eqcode');
+      const type=val('ee-eqtype');
+      if(!code){showToast('Enter a unit ID');return;}
+      if(!name){showToast('Enter an equipment name');return;}
+      if(!type){showToast('Enter an equipment type');return;}
+      const idx=state.equipment.findIndex(e=>e.id===ed.id);
+      state.equipment[idx]={...state.equipment[idx],name,code,type};
+      showToast('Equipment updated');
+      state.equipmentEditor=null;render();
+    });
+    bindIf('btn-addeq','click',()=>{
+      const name=val('np-eqname');
+      const code=val('np-eqcode');
+      const type=val('np-eqtype');
+      if(!code){showToast('Enter a unit ID');return;}
+      if(!name){showToast('Enter an equipment name');return;}
+      if(!type){showToast('Enter an equipment type (used for job rate setup)');return;}
+      state.equipment.push({id:uid(),name,code,type,active:true});
+      showToast('Equipment added');render();
+    });
+  }
+
+  if(state.tab==='myentry'){
+    bindIf('btn-me-login','click',()=>{
+      const id=val('me-loginid');
+      const pw=val('me-loginpw');
+      const emp=state.employees.find(e=>e.employeeId===id&&e.active);
+      if(!emp){showToast('No active employee found with that ID');return;}
+      if(!emp.loginPassword||emp.loginPassword!==pw){showToast('Incorrect password');return;}
+      state.operatorSession=emp.id;
+      state.myEntryDraft=null;
+      showToast('Welcome, '+emp.name);
+      const perms=emp.permissions||freshPermissions();
+      if(perms.jobsetup!=='none')state.tab='jobsetup';
+      else if(perms.employees!=='none')state.tab='employees';
+      else if(perms.equipment!=='none')state.tab='equipment';
+      else if(perms.access!=='none')state.tab='access';
+      else if(perms.newreport!=='none'){
+        const jobs=emp.supervisedProjectIds||[];
+        if(!jobs.includes(state.activeProjectId))state.activeProjectId=jobs[0]||null;
+        state.currentReport=null;
+        state.tab=jobs.length?'new':'myentry';
+        if(!jobs.length)showToast('You have New report access but no jobs assigned yet \u2014 ask your admin to assign one on Access Control.');
+      }else if(perms.savedreports!=='none'){
+        state.tab='saved';
+      }else{
+        state.tab='myentry';
+      }
+      render();
+    });
+
+    bindIf('btn-me-logout','click',()=>{
+      state.operatorSession=null;
+      state.myEntryDraft=null;
+      state.adminMode=false;
+      state.tab='myentry';
+      render();
+    });
+
+    document.querySelectorAll('[data-notif-read]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const n=state.notifications.find(x=>x.id===btn.dataset.notifRead);
+        if(n)n.read=true;
+        render();
+      });
+    });
+
+    if(state.operatorSession){
+      const d=state.myEntryDraft;
+      bindIf('me-project','change',e=>{d.projectId=e.target.value||null;d.costCode="";render();});
+      bindIf('me-date','change',e=>{d.date=e.target.value;});
+      bindIf('me-costcode','change',e=>{d.costCode=e.target.value;});
+      bindIf('me-hours','input',e=>{d.totalHours=e.target.value;});
+      bindIf('me-travel','input',e=>{d.travel=e.target.value;});
+      bindIf('me-truck','change',e=>{d.truck=e.target.value;if(d.truck==='No')d.truckId="";render();});
+      bindIf('me-truckid','input',e=>{d.truckId=e.target.value;});
+      bindIf('me-loa','change',e=>{d.loa=e.target.value;});
+      bindIf('me-equip','input',e=>{d.equipName=e.target.value;});
+      bindIf('me-equiphours','input',e=>{d.equipHours=e.target.value;});
+      bindIf('me-comments','input',e=>{d.comments=e.target.value;});
+
+      bindIf('btn-me-submit','click',()=>{
+        if(!d.projectId){showToast('Select a project');return;}
+        if(!d.costCode){showToast('Select a cost code');return;}
+        if(!d.date){showToast('Select a date');return;}
+        if(!d.totalHours||Number(d.totalHours)<=0){showToast('Enter your total hours');return;}
+        const eq=state.equipment.find(e=>e.name===d.equipName);
+        state.operatorEntries.push({
+          id:uid(),employeeId:state.operatorSession,projectId:d.projectId,date:d.date,
+          costCode:d.costCode,ticket:generateTicket(d.projectId,d.date),totalHours:Number(d.totalHours),travel:Number(d.travel)||0,
+          truck:d.truck,truckId:d.truck==='No'?'':d.truckId,loa:d.loa,
+          equipName:d.equipName,equipUnitId:eq?eq.code:"",equipHours:d.equipName?(Number(d.equipHours)||0):"",
+          comments:d.comments,status:'submitted',submittedAt:new Date().toISOString()
+        });
+        showToast('Submitted for supervisor review');
+        state.myEntryDraft={projectId:d.projectId,date:d.date,costCode:"",totalHours:"",travel:"",truck:"No",truckId:"",loa:"No",equipName:"",equipHours:"",comments:""};
+        render();
+      });
+
+      document.querySelectorAll('[data-me-del]').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          state.operatorEntries=state.operatorEntries.filter(oe=>oe.id!==btn.dataset.meDel);
+          render();
+        });
+      });
+      document.querySelectorAll('[data-me-edit]').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          const oe=state.operatorEntries.find(x=>x.id===btn.dataset.meEdit);
+          state.myEntryDraft={projectId:oe.projectId,date:oe.date,costCode:oe.costCode,totalHours:oe.totalHours,travel:oe.travel,truck:oe.truck,truckId:oe.truckId,loa:oe.loa,equipName:oe.equipName,equipHours:oe.equipHours,comments:oe.comments};
+          state.operatorEntries=state.operatorEntries.filter(x=>x.id!==oe.id);
+          render();
+        });
+      });
+    }
+  }
+
+  if(state.tab==='new'){
+    const r=state.currentReport;
+    const projSel=document.getElementById('rf-project');
+    if(projSel)projSel.addEventListener('change',e=>{state.activeProjectId=e.target.value;state.currentReport=null;render();});
+    bindIf('rf-date','change',e=>{r.date=e.target.value;render();});
+    bindIf('rf-shift','change',e=>{r.shift=e.target.value;});
+    bindIf('rf-hse','input',e=>{r.hseHighlights=e.target.value;});
+    bindIf('rf-weatherAM','change',e=>{r.weatherAM=e.target.value;});
+    bindIf('rf-weatherAMTemp','input',e=>{r.weatherAMTemp=e.target.value;});
+    bindIf('rf-weatherPM','change',e=>{r.weatherPM=e.target.value;});
+    bindIf('rf-weatherPMTemp','input',e=>{r.weatherPMTemp=e.target.value;});
+    bindIf('rf-siteCond','input',e=>{r.siteConditionNotes=e.target.value;});
+    bindIf('rf-notesTeam','input',e=>{r.notesForTeam=e.target.value;});
+    bindIf('rf-worksum','input',e=>{r.workSummary=e.target.value;});
+    bindIf('rf-rfis','input',e=>{r.rfisNotices=e.target.value;});
+    bindIf('btn-useweather','click',useCurrentWeather);
+
+    document.querySelectorAll('[data-inc]').forEach(inp=>{
+      inp.addEventListener('input',()=>{
+        const [i,key]=inp.dataset.inc.split('.');
+        r.incidentLog[Number(i)][key]=inp.value;
+      });
+    });
+
+    document.querySelectorAll('[data-dyn]').forEach(inp=>{
+      const evt=inp.tagName==='SELECT'?'change':'input';
+      inp.addEventListener(evt,()=>{
+        const [key,iStr,field]=inp.dataset.dyn.split('.');
+        const i=Number(iStr);
+        r[key][i][field]=inp.value;
+        const col=SECTIONS[key].columns.find(c=>c.key===field);
+        if(col&&col.type==='employee-select'&&col.fillPosition){
+          const emp=state.employees.find(e=>e.name===inp.value);
+          if(emp)r[key][i][col.fillPosition]=emp.position;
+          render();return;
+        }
+        if(col&&col.type==='equipment-select'&&col.fillCode){
+          const eq=state.equipment.find(e=>e.name===inp.value);
+          if(eq)r[key][i][col.fillCode]=eq.code;
+          render();return;
+        }
+        if(col&&col.type==='costcode-select'&&col.fillName){
+          const proj=activeProject();
+          const cc=proj&&proj.costCodes.find(c=>c.code===inp.value);
+          if(cc)r[key][i][col.fillName]=cc.name;
+          render();return;
+        }
+      });
+    });
+    document.querySelectorAll('[data-addrow]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        r[btn.dataset.addrow].push(newRow(btn.dataset.addrow));
+        render();
+      });
+    });
+    document.querySelectorAll('[data-rmrow]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const [key,i]=btn.dataset.rmrow.split('.');
+        r[key].splice(Number(i),1);
+        render();
+      });
+    });
+
+    const photoCam=document.getElementById('rf-photo-camera');
+    const photoLib=document.getElementById('rf-photo-library');
+    const handlePhoto=e=>{
+      const file=e.target.files[0];if(!file)return;
+      resizeImage(file,480,dataUrl=>{r.photos.push(dataUrl);render();});
+    };
+    if(photoCam)photoCam.addEventListener('change',handlePhoto);
+    if(photoLib)photoLib.addEventListener('change',handlePhoto);
+    document.querySelectorAll('[data-rmphoto]').forEach(img=>{
+      img.addEventListener('click',()=>{r.photos.splice(Number(img.dataset.rmphoto),1);render();});
+    });
+
+    const NOTIFY_FIELDS=[
+      {key:'costCode',label:'Cost code'},{key:'totalHours',label:'Total hours'},{key:'travel',label:'Travel'},
+      {key:'truck',label:'Pickup truck'},{key:'truckId',label:'Truck ID'},{key:'loa',label:'LOA'},
+      {key:'equipName',label:'Equipment used'},{key:'equipHours',label:'Equipment hours'},{key:'comments',label:'Comments'}
+    ];
+    function diffAndSyncOperatorEntry(row){
+      const oe=state.operatorEntries.find(x=>x.id===row._operatorEntryId);
+      if(!oe)return;
+      const changes=[];
+      NOTIFY_FIELDS.forEach(f=>{
+        const oldVal=(oe[f.key]===undefined||oe[f.key]===null)?'':String(oe[f.key]);
+        const newVal=(row[f.key]===undefined||row[f.key]===null)?'':String(row[f.key]);
+        if(oldVal!==newVal)changes.push({field:f.key,label:f.label,oldValue:oldVal||'(blank)',newValue:newVal||'(blank)'});
+      });
+      if(changes.length){
+        const who=loggedInPerson();
+        state.notifications.push({
+          id:uid(),employeeId:oe.employeeId,date:oe.date,ticket:oe.ticket,
+          changes,changedBy:who?who.name:(state.adminMode?'Admin':'Supervisor'),
+          timestamp:new Date().toISOString(),read:false
+        });
+      }
+      NOTIFY_FIELDS.forEach(f=>{oe[f.key]=row[f.key];});
+      ['totalHours','travel','equipHours'].forEach(nk=>{
+        if(oe[nk]!==''&&oe[nk]!==undefined)oe[nk]=Number(oe[nk])||0;
+      });
+    }
+
+    const persistReport=(finalStatus)=>{
+      const activeP=activeProject();
+      const otT=Number(activeP.otDailyThreshold)||8;
+      const dtT=Number(activeP.dtDailyThreshold)||12;
+      computeLabourSplit(r.directLabour,otT,dtT);
+      computeLabourSplit(r.indirectLabour,otT,dtT);
+      r.status=finalStatus;
+      r.directLabour.forEach(row=>{if(row._operatorEntryId)diffAndSyncOperatorEntry(row);});
+      const idx=state.reports.findIndex(x=>x.id===r.id);
+      if(idx>-1)state.reports[idx]=JSON.parse(JSON.stringify(r));
+      else state.reports.push(JSON.parse(JSON.stringify(r)));
+      if(finalStatus==='confirmed'){
+        r.directLabour.forEach(row=>{
+          if(row._operatorEntryId){
+            const oe=state.operatorEntries.find(x=>x.id===row._operatorEntryId);
+            if(oe)oe.status='confirmed';
+          }
+        });
+      }
+    };
+
+    bindIf('btn-savereport','click',()=>{
+      persistReport('draft');
+      showToast('Draft saved');
+      state.tab='saved';render();
+    });
+
+    bindIf('btn-confirmreport','click',()=>{
+      persistReport('confirmed');
+      showToast('Report confirmed and submitted');
+      state.tab='saved';render();
+    });
+  }
+
+  if(state.tab==='saved'){
+    document.querySelectorAll('[data-editreport]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const rep=state.reports.find(x=>x.id===btn.dataset.editreport);
+        state.currentReport=JSON.parse(JSON.stringify(rep));
+        state.activeProjectId=rep.projectId;
+        state.tab='new';render();
+      });
+    });
+    document.querySelectorAll('[data-delreport]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        state.reports=state.reports.filter(x=>x.id!==btn.dataset.delreport);
+        render();
+      });
+    });
+    document.querySelectorAll('[data-pdf]').forEach(btn=>{
+      btn.addEventListener('click',()=>exportPDF(state.reports.find(x=>x.id===btn.dataset.pdf)));
+    });
+    bindIf('btn-payroll','click',()=>{
+      const start=val('pr-start');
+      const end=val('pr-end');
+      exportPayrollXLSX(start,end);
+    });
+  }
+}
+
+function val(id){return document.getElementById(id).value;}
+function bindIf(id,evt,fn){const el=document.getElementById(id);if(el)el.addEventListener(evt,fn);}
+
+function resizeImage(file,maxW,cb){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      const scale=Math.min(1,maxW/img.width);
+      const canvas=document.createElement('canvas');
+      canvas.width=img.width*scale;canvas.height=img.height*scale;
+      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+      cb(canvas.toDataURL('image/jpeg',0.72));
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function useCurrentWeather(){
+  if(!navigator.geolocation){showToast('Geolocation not available');return;}
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    try{
+      const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&current=temperature_2m,weather_code`);
+      const data=await res.json();
+      const code=data.current.weather_code;
+      const map={0:"Sunny",1:"Sunny",2:"Overcast",3:"Overcast",45:"Fog",48:"Fog",51:"Raining",53:"Raining",55:"Raining",61:"Raining",63:"Raining",65:"Raining",71:"Snowing",73:"Snowing",75:"Snowing",80:"Raining",81:"Raining",82:"Raining",95:"Raining",96:"Raining",99:"Raining"};
+      state.currentReport.weatherAM=map[code]||"Overcast";
+      state.currentReport.weatherAMTemp=Math.round(data.current.temperature_2m);
+      render();showToast('Weather updated');
+    }catch(err){showToast('Could not fetch weather');}
+  },err=>showToast('Could not get location: '+err.message));
+}
+
+function exportPDF(r){
+  const proj=state.projects.find(p=>p.id===r.projectId);
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF();
+  try{doc.addImage(LOGO_DATA_URI,'PNG',141,8,55,6.3);}catch(e){}
+  doc.setFontSize(15);doc.text(state.companyName,14,15);
+  doc.setFontSize(11);doc.text('Project - Daily Site Report',14,22);
+  doc.setFontSize(9);doc.text('Date: '+r.date+'  ('+r.shift+' shift, '+dayName(r.date)+')',14,28);
+
+  let y=34;
+  doc.autoTable({startY:y,head:[['Project information','']],body:[
+    ['Client name',proj.clientName],['Client project #',proj.clientProjectNum],
+    ['Client project name',proj.clientProjectName],['Company project #',proj.companyProjectNum],
+    ['Company project name',proj.companyProjectName]
+  ],styles:{fontSize:8},headStyles:{fillColor:[22,48,46]}});
+  y=doc.lastAutoTable.finalY+4;
+
+  CONTACT_BLOCKS.forEach(b=>{
+    const c=proj[b.key];
+    doc.autoTable({startY:y,head:[[b.label,'']],body:CONTACT_KEYS.map(k=>[CONTACT_LABELS[k],c[k]||'']),styles:{fontSize:8},headStyles:{fillColor:[74,74,76]}});
+    y=doc.lastAutoTable.finalY+4;
+  });
+
+  doc.autoTable({startY:y,head:[['Incident type','Comment','Today','To date']],body:r.incidentLog.map(i=>[i.type,i.comment,i.today,i.toDate]),styles:{fontSize:8},headStyles:{fillColor:[165,0,33]}});
+  y=doc.lastAutoTable.finalY+4;
+
+  doc.autoTable({startY:y,head:[['Daily HSE highlights']],body:[[r.hseHighlights||'']],styles:{fontSize:8},headStyles:{fillColor:[22,48,46]}});
+  y=doc.lastAutoTable.finalY+4;
+
+  doc.autoTable({startY:y,head:[['Site conditions','']],body:[
+    ['Weather AM',r.weatherAM+' '+r.weatherAMTemp+'C'],['Weather PM',r.weatherPM+' '+r.weatherPMTemp+'C'],
+    ['Site condition notes',r.siteConditionNotes],['Notes for project team',r.notesForTeam]
+  ],styles:{fontSize:8},headStyles:{fillColor:[74,74,76]}});
+  y=doc.lastAutoTable.finalY+4;
+
+  doc.autoTable({startY:y,head:[['Daily summary of work performed']],body:[[r.workSummary||'']],styles:{fontSize:8},headStyles:{fillColor:[22,48,46]}});
+  y=doc.lastAutoTable.finalY+4;
+
+  doc.autoTable({startY:y,head:[['RFIs, notices, client comments, deviations']],body:[[r.rfisNotices||'']],styles:{fontSize:8},headStyles:{fillColor:[22,48,46]}});
+  y=doc.lastAutoTable.finalY+4;
+
+  if(r.delayLog.length){
+    doc.autoTable({startY:y,head:[SECTIONS.delayLog.columns.map(c=>c.label)],body:r.delayLog.map(row=>SECTIONS.delayLog.columns.map(c=>row[c.key])),styles:{fontSize:7},headStyles:{fillColor:[165,0,33],textColor:[255,246,242]}});
+    y=doc.lastAutoTable.finalY+4;
+  }
+
+  Object.keys(SECTIONS).forEach(key=>{
+    if(key==='delayLog')return;
+    const cfg=SECTIONS[key];
+    if(!r[key].length)return;
+    if(y>250){doc.addPage();y=15;}
+    doc.autoTable({startY:y,head:[cfg.columns.map(c=>c.label)],body:r[key].map(row=>cfg.columns.map(c=>row[c.key])),styles:{fontSize:6.5},headStyles:{fillColor:[74,74,76]}});
+    y=doc.lastAutoTable.finalY+4;
+  });
+
+  doc.save('daily-site-report-'+r.date+'.pdf');
+  showToast('PDF exported');
+}
+
+const MONTH_ABBR=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const DOW_ABBR=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+function shortDate(d){return String(d.getDate()).padStart(2,'0')+'-'+MONTH_ABBR[d.getMonth()];}
+function sumField(rows,key){return rows.reduce((s,r)=>s+(Number(r[key])||0),0);}
+
+function exportPayrollXLSX(start,end){
+  if(!start||!end||start>end){showToast('Check the pay period dates');return;}
+
+  const scopedProjectIds=new Set(visibleProjects().map(p=>p.id));
+  const reports=state.reports.filter(r=>r.date>=start&&r.date<=end&&scopedProjectIds.has(r.projectId));
+
+  const empNamesInRange=new Set();
+  reports.forEach(r=>{
+    [...r.directLabour,...r.indirectLabour].forEach(e=>{if(e.name)empNamesInRange.add(e.name);});
+  });
+
+  if(empNamesInRange.size===0){showToast('No labour entries found in that date range');return;}
+
+  const wb=XLSX.utils.book_new();
+
+  empNamesInRange.forEach(empName=>{
+    const emp=state.employees.find(e=>e.name===empName)||{name:empName,employeeId:'',contractor:false,taxExempt:false,vendor:''};
+    const rows=[];
+    rows.push(['Employee Timesheet']);
+    rows.push([]);
+    rows.push(['Name:',emp.name,'','','','','Employee Id:',emp.employeeId||'']);
+    rows.push([]);
+    rows.push(['Pay Period Start Date:',shortDate(new Date(start+'T00:00:00')),'','','','','Contractor:',emp.contractor?'Y':'N']);
+    rows.push(['Pay Period End Date:',shortDate(new Date(end+'T00:00:00')),'','','','','Tax Exempt:',emp.taxExempt?'Y':'N']);
+    rows.push(['Associated Vendor:',emp.vendor||'']);
+    rows.push([]);
+    rows.push(['Day','Date','Job','Ticket','Total Hours','Reg','OT','DT','Travel','Truck','LOA','Province']);
+
+    const totals={total:0,reg:0,ot:0,dt:0,travel:0,loa:0};
+    let cursor=new Date(start+'T00:00:00');
+    const endD=new Date(end+'T00:00:00');
+    while(cursor<=endD){
+      const dateStr=cursor.toISOString().slice(0,10);
+      const dow=DOW_ABBR[cursor.getDay()];
+      const dayReports=reports.filter(r=>r.date===dateStr);
+      let entries=[];
+      const jobsForDay=[];
+      dayReports.forEach(rep=>{
+        const empEntries=[...rep.directLabour,...rep.indirectLabour].filter(e=>e.name===empName);
+        if(empEntries.length){
+          const proj=state.projects.find(p=>p.id===rep.projectId);
+          jobsForDay.push({proj,entries:empEntries});
+          entries=entries.concat(empEntries);
+        }
+      });
+      if(entries.length===0){
+        rows.push([dow,shortDate(cursor),'','','','','','','','','','']);
+      }else{
+        const totalHrs=sumField(entries,'totalHours');
+        const reg=sumField(entries,'rtHours');
+        const ot=sumField(entries,'otHours');
+        const dt=sumField(entries,'dtHours');
+        const travel=sumField(entries,'travel');
+        const ticket=entries.map(e=>e.ticket).filter(Boolean).join(', ');
+        const truckYes=entries.some(e=>e.truck&&e.truck!=='No');
+        const truckIds=[...new Set(entries.filter(e=>e.truckId).map(e=>e.truckId))].join(', ');
+        const loaYes=entries.some(e=>e.loa==='Yes');
+        const jobNames=[...new Set(jobsForDay.map(j=>j.proj?(j.proj.clientProjectName||j.proj.clientName):'Unknown project'))].join(' / ');
+        const provinces=[...new Set(jobsForDay.map(j=>j.proj?j.proj.province:'').filter(Boolean))].join('/');
+        rows.push([dow,shortDate(cursor),jobNames,ticket,totalHrs.toFixed(2),reg.toFixed(2),ot.toFixed(2),dt.toFixed(2),travel.toFixed(2),truckYes?(truckIds||'Y'):'',loaYes?'1.00':'',provinces]);
+        totals.total+=totalHrs;totals.reg+=reg;totals.ot+=ot;totals.dt+=dt;totals.travel+=travel;if(loaYes)totals.loa+=1;
+      }
+      cursor.setDate(cursor.getDate()+1);
+    }
+    rows.push([]);
+    rows.push(['','','','',totals.total.toFixed(2),totals.reg.toFixed(2),totals.ot.toFixed(2),totals.dt.toFixed(2),totals.travel.toFixed(2),'',totals.loa.toFixed(2),'']);
+
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:6},{wch:9},{wch:34},{wch:10},{wch:11},{wch:8},{wch:7},{wch:7},{wch:8},{wch:10},{wch:7},{wch:8}];
+    let sheetName=empName.replace(/[:\\\/\?\*\[\]]/g,'').slice(0,31);
+    XLSX.utils.book_append_sheet(wb,ws,sheetName||'Employee');
+  });
+
+  XLSX.writeFile(wb,'payroll-timesheet-'+start+'-to-'+end+'.xlsx');
+  showToast('Payroll Excel exported');
+}
+
+document.getElementById("logoImg").src=LOGO_DATA_URI;
+
+(async function boot(){
+  document.getElementById('view').innerHTML='<div class="empty">Loading\u2026</div>';
+  let loaded=false;
+  try{
+    loaded=await loadState();
+  }catch(e){
+    console.error('Startup load failed',e);
+  }
+  if(!loaded){
+    seed();
+    if(storageAvailable){
+      try{await persistState();}catch(e){console.error('Initial save failed',e);}
+    }
+  }
+  if(!storageAvailable){
+    showToast('Running without saved storage \u2014 data in this session will not carry over to next time you open this file.');
+  }
+  render();
+})();
+</script>
+</body>
+</html>
